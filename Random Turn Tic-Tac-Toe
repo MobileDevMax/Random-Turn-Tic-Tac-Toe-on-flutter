@@ -1,0 +1,148 @@
+import 'package:flutter/material.dart';
+import 'dart:math';
+
+void main() {
+  runApp(MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Random Turn Tic-Tac-Toe',
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+      ),
+      home: TicTacToeGame(),
+    );
+  }
+}
+
+class TicTacToeGame extends StatefulWidget {
+  @override
+  _TicTacToeGameState createState() => _TicTacToeGameState();
+}
+
+class _TicTacToeGameState extends State<TicTacToeGame> {
+  List<String> board = List.filled(9, '');
+  String currentPlayer = 'X';
+  Random random = Random();
+  String winner = '';
+  bool gameActive = true;
+
+  void makeMove(int index) {
+    if (board[index] == '' && gameActive) {
+      setState(() {
+        board[index] = currentPlayer;
+        checkForWinner();
+        currentPlayer = currentPlayer == 'X' ? 'O' : 'X';
+        if (gameActive && random.nextBool()) {
+          currentPlayer = (currentPlayer == 'X') ? 'O' : 'X';
+        }
+      });
+    }
+  }
+
+  void checkForWinner() {
+    List<List<int>> winningCombinations = [
+      [0, 1, 2], // Horizontals
+      [3, 4, 5],
+      [6, 7, 8],
+      [0, 3, 6], // Verticals
+      [1, 4, 7],
+      [2, 5, 8],
+      [0, 4, 8], // Diagonals
+      [2, 4, 6],
+    ];
+
+    for (var combination in winningCombinations) {
+      if (board[combination[0]] == board[combination[1]] &&
+          board[combination[1]] == board[combination[2]] &&
+          board[combination[0]] != '') {
+        setState(() {
+          winner = board[combination[0]];
+          gameActive = false;
+        });
+        showWinnerDialog(winner);
+        return;
+      }
+    }
+
+    if (!board.contains('')) {
+      showWinnerDialog('Draw');
+      setState(() {
+        gameActive = false;
+      });
+    }
+  }
+
+  void showWinnerDialog(String winner) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(winner == 'Draw' ? 'Draw!' : 'Winner: $winner'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                resetGame();
+              },
+              child: Text('Start over'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void resetGame() {
+    setState(() {
+      board = List.filled(9, '');
+      currentPlayer = 'X';
+      winner = '';
+      gameActive = true;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Random Turn Tic-Tac-Toe'),
+      ),
+      body: Column(
+        children: [
+          Expanded(
+            child: GridView.builder(
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 3),
+              itemCount: 9,
+              itemBuilder: (context, index) {
+                return GestureDetector(
+                  onTap: () => makeMove(index),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.black),
+                    ),
+                    child: Center(
+                      child: Text(
+                        board[index],
+                        style: TextStyle(fontSize: 96, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+          Text('Current player: $currentPlayer', style: TextStyle(fontSize: 24)),
+          SizedBox(height: 10),
+          ElevatedButton(
+            onPressed: resetGame,
+            child: Text('Reset game'),
+          ),
+        ],
+      ),
+    );
+  }
+}
